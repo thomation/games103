@@ -73,12 +73,14 @@ public class Rigid_Bunny : MonoBehaviour
 		if(Input.GetKey("r"))
 		{
 			transform.position = new Vector3 (0, 0.6f, 0);
+            transform.rotation = new Quaternion(0, 0, 0, 0);
 			restitution = 0.5f;
 			launched=false;
 		}
 		if(Input.GetKey("l"))
 		{
 			v = new Vector3 (5, 2, 0);
+			w = new Vector3(0, 50, 0);
 			launched=true;
 		}
 		if (!launched)
@@ -87,8 +89,12 @@ public class Rigid_Bunny : MonoBehaviour
 		var f = mass * new Vector3(0, -9.8f, 0);
 		v += f * dt / mass;
 		v *= linear_decay;
-		// Part II: Collision Impulse
-		Collision_Impulse(new Vector3(0, 0.01f, 0), new Vector3(0, 1, 0));
+
+		w *= angular_decay;
+
+
+        // Part II: Collision Impulse
+        Collision_Impulse(new Vector3(0, 0.01f, 0), new Vector3(0, 1, 0));
 		Collision_Impulse(new Vector3(2, 0, 0), new Vector3(-1, 0, 0));
 
 		// Part III: Update position & orientation
@@ -97,7 +103,11 @@ public class Rigid_Bunny : MonoBehaviour
 		x += v * dt;
 		//Update angular status
 		Quaternion q = transform.rotation;
-
+		var dw = w * dt * 0.5f;
+		Debug.Log(w);
+		Debug.Log(dw);
+		var dq = new Quaternion(dw.x, dw.y, dw.z, 0f) * q;
+		q = new Quaternion(q.x + dq.x, q.y + dq.y, q.z + dq.z, q.w + dq.w);
 		// Part IV: Assign to the object
 		transform.position = x;
 		transform.rotation = q;
