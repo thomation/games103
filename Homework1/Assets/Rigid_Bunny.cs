@@ -13,7 +13,8 @@ public class Rigid_Bunny : MonoBehaviour
 
 	float linear_decay	= 0.999f;				// for velocity decay
 	float angular_decay	= 0.98f;				
-	float restitution 	= 0.5f;					// for collision
+	float MuT = 0.5f;
+	float MuN = 0.5f;
 
 
 	// Use this for initialization
@@ -71,21 +72,42 @@ public class Rigid_Bunny : MonoBehaviour
 		Matrix4x4 R = Matrix4x4.Rotate(transform.rotation);
         for (int i = 0; i < vertices.Length; i++)
         {
-			Vector4 r4i = vertices[i];
-			r4i = R * r4i;
-			Vector3 Rri = r4i;
+			Vector3 Rri = R.MultiplyVector(vertices[i]);
             Vector3 xi = transform.position + Rri;
             var d = Vector3.Dot(xi - P, N);
-            if (d < 0)
-            {
-                insideAmount++;
-                insidePoint += xi;
-            }
+			if (d < 0)
+			{
+				insideAmount++;
+				insidePoint += vertices[i];
+			}
         }
         if (insideAmount > 0)
         {
             insidePoint /= insideAmount;
-            Debug.Log($"Inside average:{insidePoint}");
+			Vector3 Rri = R.MultiplyVector(insidePoint);
+            var vi = v + Vector3.Cross(w, Rri);
+            if (Vector3.Dot(vi, N) < 0)
+            {
+				var vNi = Vector3.Dot(vi, N) * N;
+				var vTi = vi - vNi;
+				var alpha = Mathf.Max(1 - MuT * (1 + MuT) * vNi.sqrMagnitude / vTi.sqrMagnitude, 0);
+				var vNi_new = -MuN * vNi;
+				var vTi_new = alpha * vTi;
+				var vi_new = vNi_new + vTi_new;
+
+				var K = Matrix4x4.zero;
+				K[0, 0] = K[1, 1] = K[2, 2] = 1f / mass;
+				var Rri_cross = Get_Cross_Matrix(Rri);
+				var I_ref_inverse = I_ref.inverse;
+				var sub = Rri_cross * I_ref_inverse * Rri_cross;
+				for(int ri = 0; ri < 4; ri ++)
+					for(int ci = 0; ci < 4; ci ++)
+                        K[ri, ci] = K[ri, ci] - sub[ri, ci];
+
+				var j = K.inverse.MultiplyVector(vi_new - vi);
+				v += j / mass;
+				w += I_ref_inverse.MultiplyVector(Vector3.Cross(Rri, j));
+            }
         }
     }
 
@@ -97,7 +119,6 @@ public class Rigid_Bunny : MonoBehaviour
 		{
 			transform.position = new Vector3 (0, 0.6f, 0);
             transform.rotation = new Quaternion(0, 0, 0, 0);
-			restitution = 0.5f;
 			launched=false;
 		}
 		if(Input.GetKey("l"))
