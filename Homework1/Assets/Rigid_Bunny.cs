@@ -64,6 +64,25 @@ public class Rigid_Bunny : MonoBehaviour
 	//a plane <P, N>
 	void Collision_Impulse(Vector3 P, Vector3 N)
 	{
+		var insidePoint = Vector3.zero;
+		var insideAmount = 0;
+		Mesh mesh = GetComponent<MeshFilter>().mesh;
+		Vector3[] vertices = mesh.vertices;
+		for (int i=0; i<vertices.Length; i++)
+        {
+			var x = transform.position + vertices[i];
+            var d = Vector3.Dot(x - P, N);
+			if(d < 0)
+            {
+				insideAmount++;
+				insidePoint += x;
+            }
+        }
+		if(insideAmount > 0)
+        {
+			insidePoint /= insideAmount;
+			Debug.Log($"Inside average:{insidePoint}");
+        }
 	}
 
 	// Update is called once per frame
@@ -104,8 +123,6 @@ public class Rigid_Bunny : MonoBehaviour
 		//Update angular status
 		Quaternion q = transform.rotation;
 		var dw = w * dt * 0.5f;
-		Debug.Log(w);
-		Debug.Log(dw);
 		var dq = new Quaternion(dw.x, dw.y, dw.z, 0f) * q;
 		q = new Quaternion(q.x + dq.x, q.y + dq.y, q.z + dq.z, q.w + dq.w);
 		// Part IV: Assign to the object
