@@ -43,8 +43,7 @@ public class Rigid_Bunny : MonoBehaviour
 		}
 		I_ref [3, 3] = 1;
 	}
-	
-	Matrix4x4 Get_Cross_Matrix(Vector3 a)
+    Matrix4x4 Get_Cross_Matrix(Vector3 a)
 	{
 		//Get the cross product matrix of vector a
 		Matrix4x4 A = Matrix4x4.zero;
@@ -82,10 +81,11 @@ public class Rigid_Bunny : MonoBehaviour
 			v = new Vector3 (5, 2, 0);
 			launched=true;
 		}
-
+		if (!launched)
+			return;
 		// Part I: Update velocities
-
-
+		var f = mass * new Vector3(0, -9.8f, 0);
+		//v += f * dt / mass;
 		// Part II: Collision Impulse
 		Collision_Impulse(new Vector3(0, 0.01f, 0), new Vector3(0, 1, 0));
 		Collision_Impulse(new Vector3(2, 0, 0), new Vector3(-1, 0, 0));
@@ -93,6 +93,7 @@ public class Rigid_Bunny : MonoBehaviour
 		// Part III: Update position & orientation
 		//Update linear status
 		Vector3 x    = transform.position;
+		x += v * dt;
 		//Update angular status
 		Quaternion q = transform.rotation;
 
