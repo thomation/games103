@@ -85,7 +85,8 @@ public class Rigid_Bunny : MonoBehaviour
 			return;
 		// Part I: Update velocities
 		var f = mass * new Vector3(0, -9.8f, 0);
-		//v += f * dt / mass;
+		v += f * dt / mass;
+		v *= linear_decay;
 		// Part II: Collision Impulse
 		Collision_Impulse(new Vector3(0, 0.01f, 0), new Vector3(0, 1, 0));
 		Collision_Impulse(new Vector3(2, 0, 0), new Vector3(-1, 0, 0));
