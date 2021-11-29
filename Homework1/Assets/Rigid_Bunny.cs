@@ -68,25 +68,29 @@ public class Rigid_Bunny : MonoBehaviour
 		var insideAmount = 0;
 		Mesh mesh = GetComponent<MeshFilter>().mesh;
 		Vector3[] vertices = mesh.vertices;
-		for (int i=0; i<vertices.Length; i++)
+		Matrix4x4 R = Matrix4x4.Rotate(transform.rotation);
+        for (int i = 0; i < vertices.Length; i++)
         {
-			var x = transform.position + vertices[i];
-            var d = Vector3.Dot(x - P, N);
-			if(d < 0)
+			Vector4 r4i = vertices[i];
+			r4i = R * r4i;
+			Vector3 Rri = r4i;
+            Vector3 xi = transform.position + Rri;
+            var d = Vector3.Dot(xi - P, N);
+            if (d < 0)
             {
-				insideAmount++;
-				insidePoint += x;
+                insideAmount++;
+                insidePoint += xi;
             }
         }
-		if(insideAmount > 0)
+        if (insideAmount > 0)
         {
-			insidePoint /= insideAmount;
-			Debug.Log($"Inside average:{insidePoint}");
+            insidePoint /= insideAmount;
+            Debug.Log($"Inside average:{insidePoint}");
         }
-	}
+    }
 
-	// Update is called once per frame
-	void Update () 
+    // Update is called once per frame
+    void Update () 
 	{
 		//Game Control
 		if(Input.GetKey("r"))
