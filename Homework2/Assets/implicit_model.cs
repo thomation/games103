@@ -142,9 +142,23 @@ public class implicit_model : MonoBehaviour
 
 	void Get_Gradient(Vector3[] X, Vector3[] X_hat, float t, Vector3[] G)
 	{
+		var t2 = t * t;
 		//Momentum and Gravity.
-		
+		var Gravity = new Vector3(0, 1, 0);
+		for(int i = 0; i < X.Length; i ++)
+        {
+			G[i] = mass * (X[i] - X_hat[i]) / t2;
+			G[i] += mass * 9.8f * Gravity;
+        }
 		//Spring Force.
+		for(int e = 0; e < E.Length / 2; e ++)
+        {
+			var i = E[e * 2 + 0];
+			var j = E[e * 2 + 1];
+			var newL = (X[i] - X[j]).magnitude;
+			G[i] += spring_k * (1 - L[e] / newL) * (X[i] - X[j]);
+			G[j] += spring_k * (1 - L[e] / newL) * (X[j] - X[i]);
+        }
 		
 	}
 
@@ -158,17 +172,32 @@ public class implicit_model : MonoBehaviour
 		Vector3[] G 		= new Vector3[X.Length];
 
 		//Initial Setup.
+		for(int i = 0; i < X.Length; i ++)
+        {
+			V[i] *= damping;
+			X_hat[i] = X[i] + V[i] * t;
+			X[i] = X_hat[i];
+        }
 
+        float factor = 1.0f / (mass / t / t + 4 * spring_k);
 		for(int k=0; k<32; k++)
 		{
 			Get_Gradient(X, X_hat, t, G);
-			
 			//Update X by gradient.
-			
+			for(int i = 0; i < X.Length; i ++)
+            {
+				if (i == 0 || i == 20)
+					continue;
+				X[i] = X[i] - G[i] * factor;
+				last_X[i] = X[i];
+            }
 		}
 
 		//Finishing.
-		
+		for(int i = 0; i < V.Length; i ++)
+        {
+			V[i] += (X[i] - X_hat[i]) / t;
+        }
 		mesh.vertices = X;
 
 		Collision_Handling ();
