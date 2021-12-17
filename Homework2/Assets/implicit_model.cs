@@ -7,7 +7,7 @@ public class implicit_model : MonoBehaviour
 	float 		t 		= 0.0333f;
 	float 		mass	= 1;
 	float		damping	= 0.99f;
-	float 		rho		= 0.995f;
+	float 		rho		= 0.895f;
 	float 		spring_k = 8000;
 	int[] 		E;
 	float[] 	L;
@@ -191,24 +191,33 @@ public class implicit_model : MonoBehaviour
         }
 		float factor = mass / t / t + 4 * spring_k;
 		factor = 1f / factor;
+		float w = 1;
 		for(int k=0; k<32; k++)
 		{
 			Get_Gradient(X, X_hat, t, G);
+			if (k == 0)
+				w = 1;
+			else if (k == 1)
+				w = 2f / (2f - rho * rho);
+			else
+				w = 4f / (4f - rho * rho * w);
 			//Update X by gradient.
 			for(int i = 0; i < X.Length; i ++)
             {
 				if (i == 0 || i == 20)
 					continue;
 				var delta_x = factor * G[i];
-				if (k > 0 && delta_x.magnitude < 0.0001)
-				{
-					//Debug.Log($"Finish{i} at {k}");
-					continue;
-				}
-				last_X[i] = X[i];
+                if (k > 0 && delta_x.magnitude < 0.0001)
+                {
+                    //Debug.Log($"Finish{i} at {k}");
+                    continue;
+                }
+                var oldx = X[i];
 				X[i] = X[i] - delta_x;
+                X[i] = w * X[i] + (1 - w) * last_X[i];
+                last_X[i] = oldx;
             }
-		}
+        }
 
 		//Finishing.
 		for(int i = 0; i < V.Length; i ++)
