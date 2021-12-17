@@ -189,8 +189,8 @@ public class implicit_model : MonoBehaviour
 			X_hat[i] = X[i] + V[i] * t;
 			X[i] = X_hat[i];
         }
-
-        float factor = 1.0f / (mass / t / t + 4 * spring_k);
+		float factor = mass / t / t + 4 * spring_k;
+		factor = 1f / factor;
 		for(int k=0; k<32; k++)
 		{
 			Get_Gradient(X, X_hat, t, G);
@@ -199,8 +199,14 @@ public class implicit_model : MonoBehaviour
             {
 				if (i == 0 || i == 20)
 					continue;
-				X[i] = X[i] - G[i] * factor;
+				var delta_x = factor * G[i];
+				if (k > 0 && delta_x.magnitude < 0.0001)
+				{
+					//Debug.Log($"Finish{i} at {k}");
+					continue;
+				}
 				last_X[i] = X[i];
+				X[i] = X[i] - delta_x;
             }
 		}
 
