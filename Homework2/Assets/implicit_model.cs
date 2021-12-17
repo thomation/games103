@@ -144,11 +144,11 @@ public class implicit_model : MonoBehaviour
 	{
 		var t2 = t * t;
 		//Momentum and Gravity.
-		var Gravity = new Vector3(0, 1, 0);
+		var graivity_dir = new Vector3(0, -1, 0);
 		for(int i = 0; i < X.Length; i ++)
         {
 			G[i] = mass * (X[i] - X_hat[i]) / t2;
-			G[i] += mass * 9.8f * Gravity;
+			G[i] -= mass * 9.8f * graivity_dir;
         }
 		//Spring Force.
 		for(int e = 0; e < E.Length / 2; e ++)
