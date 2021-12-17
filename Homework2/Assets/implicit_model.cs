@@ -134,8 +134,19 @@ public class implicit_model : MonoBehaviour
 	{
 		Mesh mesh = GetComponent<MeshFilter> ().mesh;
 		Vector3[] X = mesh.vertices;
-		
+		var sphere = GameObject.Find("Sphere");
+		var c = sphere.transform.position;
+		var r = 2.7f;
 		//Handle colllision.
+		for(int i = 0; i < X.Length; i ++)
+        {
+			var d = X[i] - c;
+			if(d.magnitude <r)
+            {
+				V[i] += (c + r * d / d.magnitude - X[i]) / t;
+				X[i] = c + r * d / d.magnitude;
+            }
+        }
 
 		mesh.vertices = X;
 	}
