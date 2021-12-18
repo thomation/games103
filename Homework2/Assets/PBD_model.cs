@@ -131,18 +131,51 @@ public class PBD_model: MonoBehaviour {
 		Mesh mesh = GetComponent<MeshFilter> ().mesh;
 		Vector3[] vertices = mesh.vertices;
 
+		Vector3[] sum_x = new Vector3[vertices.Length];
+		int[] sum_n = new int[vertices.Length];
+		for(int e = 0; e < L.Length; e ++)
+        {
+			var i = E[e * 2 + 0];
+			var j = E[e * 2 + 1];
+			var l = L[e];
+			var xi = vertices[i];
+			var xj = vertices[j];
+			sum_x[i] += 0.5f * (xi + xj + l * (xi - xj) / (xi - xj).magnitude);
+			sum_n[i]++;
+			sum_x[j] += 0.5f * (xi + xj - l * (xi - xj) / (xi - xj).magnitude);
+			sum_n[j]++;
+        }
 		//Apply PBD here.
+		for(int i = 0; i < vertices.Length; i ++)
+        {
+			if (i == 0 || i == 20)
+				continue;
+			var new_x = (0.2f * vertices[i] + sum_x[i]) / (0.2f + sum_n[i]); 
+			V[i] += (new_x - vertices[i]) / t;
+			vertices[i] = new_x;
+        }
 		//...
 		mesh.vertices = vertices;
 	}
 
 	void Collision_Handling()
 	{
-		Mesh mesh = GetComponent<MeshFilter> ().mesh;
+		Mesh mesh = GetComponent<MeshFilter>().mesh;
 		Vector3[] X = mesh.vertices;
-		
-		//For every vertex, detect collision and apply impulse if needed.
-		//...
+		var sphere = GameObject.Find("Sphere");
+		var c = sphere.transform.position;
+		var r = 2.7f;
+		//Handle colllision.
+		for (int i = 0; i < X.Length; i++)
+		{
+			var d = X[i] - c;
+			if (d.magnitude < r)
+			{
+				V[i] += (c + r * d / d.magnitude - X[i]) / t;
+				X[i] = c + r * d / d.magnitude;
+			}
+		}
+
 		mesh.vertices = X;
 	}
 
@@ -156,6 +189,9 @@ public class PBD_model: MonoBehaviour {
 		{
 			if(i==0 || i==20)	continue;
 			//Initial Setup
+			V[i] *= damping;
+			V[i].y -= 9.8f * t;
+			X[i] += V[i] * t;
 			//...
 		}
 		mesh.vertices = X;
