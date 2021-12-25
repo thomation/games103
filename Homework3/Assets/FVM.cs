@@ -183,7 +183,7 @@ public class FVM : MonoBehaviour
         for (int i = 0; i < number; i++)
         {
             //TODO: Add gravity to Force.
-            Force[i] = graivity;
+            Force[i] += graivity;
             V[i] *= damp;
         }
 
@@ -191,8 +191,6 @@ public class FVM : MonoBehaviour
         {
             //TODO: Deformation Gradient
             var F = Build_Edge_Matrix(tet) * inv_Dm[tet];
-            if (tet == 0)
-                Debug.Log($"F is {F}");
             //TODO: Green Strain
             var G = F.transpose * F;
             for (int i = 0; i < 4; i++)
@@ -200,8 +198,6 @@ public class FVM : MonoBehaviour
                 G[i, i] -= 1;
             }
             G = MatrixMutipleFloat(G, 0.5f);
-            if (tet == 0)
-                Debug.Log($"G is {G}");
             //TODO: Second PK Stress
             var S = MatrixMutipleFloat(G, 2 * stiffness_1);
             var traceG = G[0, 0] + G[1, 1] + G[2, 2];
@@ -209,8 +205,6 @@ public class FVM : MonoBehaviour
             for (int i = 0; i < 4; i++)
                 for (int j = 0; j < 4; j++)
                     S[i, j] += S2[i, j];
-            if (tet == 0)
-                Debug.Log($"S is {S}");
             //TODO: Elastic Force
             var P = F * S;
             var fmatrix  = MatrixMutipleFloat(P * inv_Dm[tet].transpose, - 1f / 6f / inv_Dm[tet].determinant);
@@ -223,8 +217,6 @@ public class FVM : MonoBehaviour
             for(int i = 0; i < 4; i ++)
             {
                 Force[Tet[tet * 4 + i]] += f[i];
-                if(tet == 0)
-                    Debug.Log($"force {i} of tet {tet} = {f[i]}");
             }
         }
 
@@ -234,12 +226,17 @@ public class FVM : MonoBehaviour
             V[i] += Force[i] / mass * dt;
             X[i] += V[i] * dt;
             //TODO: (Particle) collision with floor.
-            //var d = Vector3.Dot(X[i] - floorPosition, floorNormal);
-            //if (d < 0)
-            //{
-            //    var f = -9.5f * d * floorNormal;
-            //    Force[i] = f;
-            //}
+            var d = Vector3.Dot(X[i] - floorPosition, floorNormal);
+            const float epsilon = 0.1f;
+            if (d < epsilon)
+            {
+                var f = 100.5f * (epsilon - d) * floorNormal;
+                Force[i] = f;
+            }
+            else
+            {
+                Force[i] = Vector3.zero;
+            }
         }
     }
 
