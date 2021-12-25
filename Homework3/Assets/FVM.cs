@@ -27,6 +27,8 @@ public class FVM : MonoBehaviour
 	int[]		V_num;
 
 	SVD svd = new SVD();
+    Vector3 floorPosition;
+    Vector3 floorNormal;
 
     // Start is called before the first frame update
     void Start()
@@ -129,6 +131,10 @@ public class FVM : MonoBehaviour
         V_num = new int[number];
 
 		//TODO: Need to allocate and assign inv_Dm
+
+        var floor = GameObject.Find("Floor");
+        floorPosition = floor.transform.position;
+        floorNormal = new Vector3(0, 1, 0);
     }
 
     Matrix4x4 Build_Edge_Matrix(int tet)
@@ -149,9 +155,11 @@ public class FVM : MonoBehaviour
     			V[i].y+=0.2f;
     	}
 
+        Vector3 graivity = new Vector3(0, -1, 0) * 9.8f * mass;
     	for(int i=0 ;i<number; i++)
     	{
-    		//TODO: Add gravity to Force.
+            //TODO: Add gravity to Force.
+            Force[i] += graivity;
     	}
 
     	for(int tet=0; tet<tet_number; tet++)
@@ -165,12 +173,19 @@ public class FVM : MonoBehaviour
     		//TODO: Elastic Force
 			
     	}
-
-    	for(int i=0; i<number; i++)
+      
+        for (int i=0; i<number; i++)
     	{
-    		//TODO: Update X and V here.
-
+            //TODO: Update X and V here.
+            V[i] += Force[i] / mass * dt;
+            X[i] += V[i] * dt;
     		//TODO: (Particle) collision with floor.
+            var d = Vector3.Dot(X[i] - floorPosition, floorNormal);
+            if (d < 0)
+			{
+                var f = -9.5f * d * floorNormal;
+                Force[i] = f;
+			}
     	}
     }
 
