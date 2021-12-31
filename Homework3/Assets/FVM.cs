@@ -30,6 +30,9 @@ public class FVM : MonoBehaviour
     Vector3 floorPosition;
     Vector3 floorNormal;
 
+    const float MuT = 0.5f;
+    const float MuN = 0.5f;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -185,7 +188,7 @@ public class FVM : MonoBehaviour
         for (int i = 0; i < number; i++)
         {
             //TODO: Add gravity to Force.
-            Force[i] += graivity;
+            Force[i] = graivity;
             V[i] *= damp;
         }
 
@@ -209,20 +212,20 @@ public class FVM : MonoBehaviour
                     S[i, j] += S2[i, j];
             //TODO: Elastic Force
             var P = F * S;
-            var fmatrix  = MatrixMutipleFloat(P * inv_Dm[tet].transpose, - 1f / 6f / inv_Dm[tet].determinant);
+            var fmatrix = MatrixMutipleFloat(P * inv_Dm[tet].transpose, -1f / 6f / inv_Dm[tet].determinant);
             Vector3[] f = new Vector3[4];
             for (int i = 0; i < 3; i++)
             {
                 f[i + 1] = fmatrix.GetColumn(i);
                 f[0] -= f[i + 1];
             }
-            for(int i = 0; i < 4; i ++)
+            for (int i = 0; i < 4; i++)
             {
                 Force[Tet[tet * 4 + i]] += f[i];
             }
         }
         // laplace
-        for(int i = 0; i < number; i ++)
+        for (int i = 0; i < number; i ++)
         {
             V[i] += Force[i] / mass * dt;
             V_sum[i] = Vector3.zero;
@@ -247,19 +250,23 @@ public class FVM : MonoBehaviour
         {
             //TODO: Update X and V here.
             V[i] = V[i] * w + V_sum[i] / V_num[i] * (1 - w);
-            X[i] += V[i] * dt;
+            // I found it's OK just to update x once after collision
+            //X[i] += V[i] * dt;
             //TODO: (Particle) collision with floor.
-            var d = Vector3.Dot(X[i] - floorPosition, floorNormal);
-            const float epsilon = 0.1f;
-            if (d < epsilon)
+            var phi = X[i] - floorPosition;
+            if (Vector3.Dot(phi, floorNormal) < 0)
             {
-                var f = 1000.5f * (epsilon - d) * floorNormal;
-                Force[i] = f;
+                if (Vector3.Dot(V[i], floorNormal) < 0)
+                {
+                    var vNi = Vector3.Dot(V[i], floorNormal) * floorNormal;
+                    var vTi = V[i] - vNi;
+                    var alpha = Mathf.Max(1 - MuT * (1 + MuT) * vNi.sqrMagnitude / vTi.sqrMagnitude, 0);
+                    var vNi_new = -MuN * vNi;
+                    var vTi_new = alpha * vTi;
+                    V[i] = vNi_new + vTi_new;
+                }
             }
-            else
-            {
-                Force[i] = Vector3.zero;
-            }
+            X[i] += V[i] * dt;
         }
     }
 
