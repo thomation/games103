@@ -141,6 +141,8 @@ public class FVM : MonoBehaviour
         var floor = GameObject.Find("Floor");
         floorPosition = floor.transform.position;
         floorNormal = new Vector3(0, 1, 0);
+        V_sum = new Vector3[number];
+        V_num = new int[number];
     }
 
     Matrix4x4 Build_Edge_Matrix(int tet)
@@ -219,18 +221,39 @@ public class FVM : MonoBehaviour
                 Force[Tet[tet * 4 + i]] += f[i];
             }
         }
-
+        // laplace
+        for(int i = 0; i < number; i ++)
+        {
+            V[i] += Force[i] / mass * dt;
+            V_sum[i] = Vector3.zero;
+            V_num[i] = 0;
+        }
+        for(int tet = 0; tet < tet_number; tet++)
+        {
+            Vector3 sum = Vector3.zero;
+            for(int i = 0; i < 4; i ++)
+            {
+                sum += V[Tet[tet * 4 + i]];
+            }
+            for(int i = 0; i < 4; i ++)
+            {
+                var v_index = Tet[tet * 4 + i];
+                V_sum[v_index] += sum - V[v_index];
+                V_num[v_index] += 3;
+            }
+        }
+        const float w = 0.5f;
         for (int i = 0; i < number; i++)
         {
             //TODO: Update X and V here.
-            V[i] += Force[i] / mass * dt;
+            V[i] = V[i] * w + V_sum[i] / V_num[i] * (1 - w);
             X[i] += V[i] * dt;
             //TODO: (Particle) collision with floor.
             var d = Vector3.Dot(X[i] - floorPosition, floorNormal);
             const float epsilon = 0.1f;
             if (d < epsilon)
             {
-                var f = 100.5f * (epsilon - d) * floorNormal;
+                var f = 1000.5f * (epsilon - d) * floorNormal;
                 Force[i] = f;
             }
             else
