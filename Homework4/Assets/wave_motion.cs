@@ -146,6 +146,17 @@ public class wave_motion : MonoBehaviour
 	{		
 		//Step 1:
 		//TODO: Compute new_h based on the shallow wave model.
+		for(int i = 0; i < size; i ++)
+        {
+			for(int j = 0; j < size; j ++)
+            {
+				new_h[i, j] = h[i, j] + (h[i, j] - old_h[i, j]) * damping;
+                new_h[i, j] += compute_pressure_with_neumann_boundary(h, i, j, i -1, j);
+				new_h[i, j] += compute_pressure_with_neumann_boundary(h, i, j, i + 1, j);
+				new_h[i, j] += compute_pressure_with_neumann_boundary(h, i, j, i, j - 1);
+				new_h[i, j] += compute_pressure_with_neumann_boundary(h, i, j, i, j + 1);
+            }
+        }
 
 		//Step 2: Block->Water coupling
 		//TODO: for block 1, calculate low_h.
@@ -162,10 +173,24 @@ public class wave_motion : MonoBehaviour
 
 		//Step 3
 		//TODO: old_h <- h; h <- new_h;
+		for(int i = 0; i < size; i ++)
+        {
+			for(int j = 0; j < size; j ++)
+            {
+				old_h[i, j] = h[i, j];
+				h[i, j] = new_h[i, j];
+            }
+        }
 
 		//Step 4: Water->Block coupling.
 		//More TODO here.
 	}
+	float compute_pressure_with_neumann_boundary(float[,] h, int i , int j, int i_s, int j_s)
+    {
+		if (i_s >= 0 && i_s < size && j_s >= 0 && j_s < size)
+			return (h[i_s, j_s] - h[i, j]) * rate;
+		return 0;
+    }
 	
 
 	// Update is called once per frame
