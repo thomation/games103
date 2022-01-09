@@ -177,10 +177,43 @@ public class wave_motion : MonoBehaviour
 		float[,] h     = new float[size, size];
 
 		//TODO: Load X.y into h.
+		for(int v = 0; v < X.Length; v ++)
+        {
+			var i = v / size;
+			var j = v - i * size;
+			h[i, j] = X[v].y;
+        }
 
 		if (Input.GetKeyDown ("r")) 
 		{
 			//TODO: Add random water.
+			var r = Random.Range(0, 1.0f);
+			var i = Random.Range(0, size);
+			var j = Random.Range(0, size);
+			h[i, j] += r;
+			// compute surround sum and deduce h with r / sum
+			int sum = 0;
+			int i_b = Mathf.Max(0, i - 1);
+			int i_e = Mathf.Min(i + 1, size - 1);
+			int j_b = Mathf.Max(0, j - 1);
+			int j_e = Mathf.Min(j + 1, size - 1);
+			for(int i_s = i_b; i_s <= i_e; i_s ++)
+            {
+				for(int j_s = j_b; j_s <= j_e; j_s ++)
+                {
+					if (i_s != i && j_s != j)
+						sum ++;
+                }
+            }
+			var dr = r / sum;
+			for(int i_s = i_b; i_s <= i_e; i_s ++)
+            {
+				for(int j_s = j_b; j_s <= j_e; j_s ++)
+                {
+					if (i_s != i && j_s != j)
+						h[i_s, j_s] -= dr;
+                }
+            }
 		}
 	
 		for(int l=0; l<8; l++)
@@ -188,8 +221,16 @@ public class wave_motion : MonoBehaviour
 			Shallow_Wave(old_h, h, new_h);
 		}
 
-		//TODO: Store h back into X.y and recalculate normal.
-
-		
+        //TODO: Store h back into X.y and recalculate normal.
+        for (int i = 0; i < size; i++)
+        {
+            for (int j = 0; j < size; j++)
+            {
+                var v = i * size + j;
+                X[v].y = h[i, j];
+            }
+        }
+        mesh.vertices = X;
+		mesh.RecalculateNormals();
 	}
 }
